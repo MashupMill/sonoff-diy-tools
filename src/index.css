@@ -1,0 +1,22 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+#root {
+    background-color: #f5f8fa;
+    min-height: 100vh;
+}
+
+.bp3-dark #root, #root.bp3-dark {
+    background-color: #30404d;
+}
+
+label.bp3-label .bp3-input-group .bp3-input {
+    margin-top: 0;
+}
+
+label.bp3-label .bp3-input-group {
+    margin-top: 5px;
+}

@@ -1,0 +1,29 @@
+{
+    "env": {
+        "browser": true,
+        "es6": true,
+        "node": true,
+        "jest": true
+    },
+    "parser": "babel-eslint",
+    "parserOptions": {
+        "sourceType": "module",
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended"
+    ],
+    "settings": {
+        "react": {
+            "version": "detect"
+        }
+    },
+    "rules": {
+        "eol-last": ["error", "always"],
+        "no-trailing-spaces": ["error"],
+        "react/jsx-indent-props": ["error", "first"]
+    }
+}
