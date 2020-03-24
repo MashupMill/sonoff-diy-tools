@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Button, Card, Collapse, Elevation, H5, Switch, Icon, Intent, } from '@blueprintjs/core';
+import { Button, Card, Collapse, Elevation, H5, Switch, Intent, } from '@blueprintjs/core';
 import styled from 'styled-components';
 import DeviceApi from '../DeviceApi';
 import DeviceConfiguration from './DeviceConfiguration';
+import FlashDialog from './FlashDialog';
 
 const StyledCard = styled(Card)`
     margin: 1em;
@@ -27,15 +28,13 @@ const CardHeaderGroup = styled(CardHeader)`
 
 export default function DeviceResult({ device }) {
     const [ showSettings, setShowSettings ] = useState(false);
+    const [ showFlash, setShowFlash ] = useState(false);
     const [ settings, setSettings ] = useState({});
     const deviceApi = new DeviceApi({ id: device.txt.id, addresses: device.addresses, port: device.port })
     const loadSettings = () => {deviceApi.getInfo().then((data) => setSettings(data || {}))};
     useEffect(loadSettings, [ device.txt.id, device.addresses, device.port ])
 
-    console.log('settings', settings);
-
     const handleConfigChange = async ({ startup, pulse, pulseWidth } = {}) => {
-        console.log('changing settings', { startup, pulse, pulseWidth })
         const saves = [];
         if (startup !== settings.startup) {
             saves.push(deviceApi.setPowerOnState(startup));
@@ -53,7 +52,8 @@ export default function DeviceResult({ device }) {
             <CardHeader>
                 <CardHeaderGroup>
                 <H5>
-                    {device.name}
+                    {device.name}{' '}
+                    <small>{device.addresses.join(', ')}</small>
                 </H5>
                 <Switch disabled={!settings.switch}
                         checked={settings.switch === 'on'}
@@ -64,11 +64,17 @@ export default function DeviceResult({ device }) {
                                 loadSettings();
                             }} />
                 </CardHeaderGroup>
-                <Button minimal intent={showSettings ? Intent.PRIMARY : undefined} onClick={() => setShowSettings(!showSettings)}><Icon icon="cog" /></Button>
+                <CardHeaderGroup>
+                    <Button disabled={!settings.switch} onClick={() => setShowFlash(!showFlash)}>Flash</Button>
+                    <Button disabled={!settings.switch} minimal icon="cog" intent={showSettings ? Intent.PRIMARY : undefined} onClick={() => setShowSettings(!showSettings)} />
+                </CardHeaderGroup>
             </CardHeader>
             <Collapse isOpen={showSettings}>
                 <DeviceConfiguration settings={settings} onChange={handleConfigChange} deviceApi={deviceApi} />
             </Collapse>
+            <FlashDialog isOpen={showFlash}
+                         deviceApi={deviceApi}
+                         onClose={() => setShowFlash(false)} />
         </StyledCard>
     )
 }

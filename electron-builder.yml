@@ -1,2 +1,6 @@
 appId: "com.github.mashupmill.sonoff-diy-tools"
 productName: Sonoff DIY Tools
+win:
+    target: portable
+linux:
+    target: tar.gz

@@ -1,11 +1,11 @@
 {
   "name": "sonoff-diy-tools",
-  "version": "1.0.0-alpha1",
+  "version": "1.0.0-beta1",
   "description": "Sonoff DIY tools",
   "main": "src/electron/electron.js",
   "homepage": "./",
   "scripts": {
-    "start": "nf start -p 3000",
+    "start": "nf start",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "npm run lint -- --fix",
     "build": "react-scripts build && cp -r src/electron/*.js build/",
@@ -13,10 +13,8 @@
     "eject": "react-scripts eject",
     "react-start": "react-scripts start",
     "electron": "electron .",
-    "electron-start": "node src/electron/main-wait-react",
     "postinstall": "electron-builder install-app-deps",
-    "build:electron": "electron-builder --mac --windows --linux",
-    "release": "electron-builder --mac --windows --linux --publish always"
+    "build:electron": "electron-builder --mac --windows --linux"
   },
   "keywords": [
     "sonoff",
@@ -33,20 +31,29 @@
     "eslint": "^6.8.0",
     "eslint-plugin-react": "^7.19.0",
     "foreman": "^3.0.1",
-    "react-scripts": "^3.4.0"
+    "nock": "^12.0.3",
+    "react-scripts": "^3.4.0",
+    "wait-on": "^4.0.1"
   },
   "dependencies": {
     "@blueprintjs/core": "^3.24.0",
     "@blueprintjs/icons": "^3.14.0",
     "axios": "^0.19.2",
     "bonjour": "^3.5.0",
+    "dnssd2": "^1.0.0",
     "electron-updater": "^4.2.5",
+    "get-port": "^5.1.1",
+    "http-server": "^0.12.1",
+    "internal-ip": "^6.0.0",
     "multicast-dns": "^7.2.1",
+    "node-fetch": "^2.6.0",
     "pretty-ms": "^6.0.1",
     "prop-types": "^15.7.2",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
-    "styled-components": "^5.0.1"
+    "styled-components": "^5.0.1",
+    "tmp-promise": "^2.0.2",
+    "use-debounce": "^3.4.0"
   },
   "browserslist": {
     "production": [
@@ -59,5 +66,20 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!<rootDir>/node_modules/",
+      "!<rootDir>/path/to/dir/"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 2,
+        "functions": 5,
+        "lines": 9,
+        "statements": 8
+      }
+    }
   }
 }

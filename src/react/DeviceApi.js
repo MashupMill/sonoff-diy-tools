@@ -86,4 +86,25 @@ export default class DeviceApi {
         const data = { deviceid: this.id, data: {} };
         return await this.doRequest(url, data);
     }
+
+    async flashOta({ downloadUrl, sha256sum }) {
+        if (isBlank(downloadUrl)) {
+            throw new Error(`Invalud download url value "${downloadUrl}". Must not be blank`);
+        }
+        if (isBlank(sha256sum)) {
+            throw new Error(`Invalud sha256 sum value "${sha256sum}". Must not be blank`);
+        }
+        const url = `${this.url}/zeroconf/ota_flash`;
+        const data = { deviceid: this.id, data: { downloadUrl, sha256sum } };
+        return await this.doRequest(url, data);
+    }
+
+    async verifyOtaUrl({ url }) {
+        return new Promise((resolve, reject) => {
+            ipcRenderer.once(channels.VERIFY_OTA_URL, (event, args) => args && args.error
+                ? reject(args.error)
+                : resolve(args));
+            ipcRenderer.send(channels.VERIFY_OTA_URL, url);
+        });
+    }
 }

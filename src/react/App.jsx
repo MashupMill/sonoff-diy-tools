@@ -16,6 +16,13 @@ class App extends Component {
     devices: {}
   }
 
+  handleDeviceUpdated = (event, device) => {
+    console.log('device added/updated', device.txt.data1)
+    if (JSON.stringify(device) !== JSON.stringify(this.state.devices[device.fqdn])) {
+      this.setState({ devices: {...this.state.devices, [device.fqdn]: device} });
+    }
+  };
+
   componentDidMount() {
     ipcRenderer.once(channels.APP_INFO, (event, arg) => {
       const { appName, appVersion, nodeVersion, chromeVersion, electronVersion } = arg;
@@ -23,10 +30,12 @@ class App extends Component {
     });
     ipcRenderer.send(channels.APP_INFO);
 
-    ipcRenderer.on(channels.DEVICE_RESPONSE, (event, device) => {
-      if (JSON.stringify(device) !== JSON.stringify(this.state.devices[device.fqdn])) {
-        this.setState({ devices: {...this.state.devices, [device.fqdn]: device} });
-      }
+    ipcRenderer.on(channels.DEVICE_ADDED, this.handleDeviceUpdated);
+    ipcRenderer.on(channels.DEVICE_UPDATED, this.handleDeviceUpdated);
+    ipcRenderer.on(channels.DEVICE_REMOVED, (event, device) => {
+      const devices = this.state.devices;
+      delete devices[device.fqdn];
+      this.setState({ devices });
     });
     ipcRenderer.send(channels.SCAN_DEVICES);
   }
