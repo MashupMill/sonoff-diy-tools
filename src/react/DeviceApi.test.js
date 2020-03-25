@@ -1,3 +1,5 @@
 describe('DeviceApi', () => {
+    it('foo', () => {
 
+    });
 });

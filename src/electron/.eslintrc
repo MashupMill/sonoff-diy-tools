@@ -1,4 +1,7 @@
 {
+    "env": {
+        "browser": false
+    },
     "parserOptions": {
         "sourceType": "commonjs",
         "ecmaFeatures": {

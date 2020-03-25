@@ -1,14 +1,22 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
+const { createServer } = require('http-server');
+const getPort = require('get-port');
+const internalIp = require('internal-ip');
+const dnssd = require('dnssd2');
 // const autoUpdater = require('electron-updater');
 const { channels } = require('./constants');
+
+const STATIC_DIR = path.join(app.getPath('userData'), 'static');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
+let staticServer;
+let staticUrl;
 
-function createWindow() {
+async function createWindow() {
     // autoUpdater.checkForUpdatesAndNotify();
     // Create the browser window.
     mainWindow = new BrowserWindow({
@@ -27,7 +35,7 @@ function createWindow() {
     });
     mainWindow.loadURL(startUrl);
     // Open the DevTools.
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
@@ -35,7 +43,13 @@ function createWindow() {
         // in an array if your app supports multi windows, this is the time
         // when you should delete the corresponding element.
         mainWindow = null
-    })
+    });
+
+    const port = await getPort();
+    const host = await internalIp.v4();
+    staticUrl = `http://${host}:${port}`;
+    staticServer = createServer({ root: STATIC_DIR });
+    staticServer.listen(port, '0.0.0.0');
 }
 
 // This method will be called when Electron has finished
@@ -56,6 +70,8 @@ app.on('activate', function () {
     }
 });
 
+app.allowRendererProcessReuse = true;
+
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 ipcMain.on(channels.APP_INFO, (event) => {
@@ -68,18 +84,16 @@ ipcMain.on(channels.APP_INFO, (event) => {
     });
 });
 
-let deviceScan;
+let browser;
 ipcMain.on(channels.SCAN_DEVICES, () => {
-    if (deviceScan) {
-        clearInterval(deviceScan);
+    if (browser) {
+        browser.stop();
     }
-    const bonjour = require('bonjour')()
-    deviceScan = setInterval(() => {
-        const browser = bonjour.find({ type: 'ewelink' }, (service) => {
-            mainWindow.webContents.send(channels.DEVICE_RESPONSE, service);
-        })
-        setTimeout(() => browser.stop(), 1000)
-    }, 1000)
+    browser = dnssd.Browser(dnssd.tcp('ewelink'))
+        .on('serviceUp', service => mainWindow.webContents.send(channels.DEVICE_ADDED, service))
+        .on('serviceChanged', service => mainWindow.webContents.send(channels.DEVICE_UPDATED, service))
+        .on('serviceDown', service => mainWindow.webContents.send(channels.DEVICE_REMOVED, service))
+        .start();
 });
 
 ipcMain.on(channels.DEVICE_API, (event, args) => {
@@ -94,3 +108,11 @@ ipcMain.on(channels.DEVICE_API, (event, args) => {
     })
 });
 
+ipcMain.on(channels.VERIFY_OTA_URL, async (event, url) => {
+    try {
+        const verification = await require('./verifyOtaUrl')(url, STATIC_DIR);
+        event.reply(channels.VERIFY_OTA_URL, {...verification, downloadUrl: `${staticUrl}/${verification.filename}`});
+    } catch (error) {
+        event.reply(channels.VERIFY_OTA_URL, { error });
+    }
+});

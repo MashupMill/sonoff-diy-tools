@@ -22,11 +22,9 @@ export default function WifiSaveConfirmDialog({ ssid, password, isOpen, onClose,
                     <p>Password: <code>{password}</code></p>
                 </H5>
             </div>
-            <div className={Classes.DIALOG_FOOTER}>
-                <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-                    <Button onClick={onClose}>Cancel</Button>
-                    <Button elementRef={primaryAction} intent={Intent.PRIMARY} onClick={onSave}>Save Wifi Settings</Button>
-                </div>
+            <div className={`${Classes.DIALOG_FOOTER} ${Classes.DIALOG_FOOTER_ACTIONS}`}>
+                <Button onClick={onClose}>Cancel</Button>
+                <Button elementRef={primaryAction} intent={Intent.PRIMARY} onClick={onSave}>Save Wifi Settings</Button>
             </div>
         </Dialog>
     )
