@@ -1,5 +1,4 @@
-import { channels } from '../electron/constants';
-const { ipcRenderer } = window;
+import { ipcRenderer as globalIpcRenderer, channels } from './ipc';
 
 const ON_OFF = ['on', 'off']
 const STARTUP_OPTS = [...ON_OFF, 'stay'];
@@ -9,24 +8,25 @@ function isBlank(value) {
 }
 
 export default class DeviceApi {
-    constructor({ id, addresses = [], port = 8081 }) {
-        if (!id) throw new Error('Device id must not be blank');
+    constructor({ id, addresses = [], port = 8081, ipcRenderer = globalIpcRenderer } = {}) {
+        if (isBlank(id)) throw new Error('Device id must not be blank');
         if (!addresses || addresses.length < 1) throw new Error('Device must have an address');
+        this.ipcRenderer = ipcRenderer;
         this.id = id;
         this.addresses = addresses;
         this.url = `http://${this.addresses[0]}:${port}`;
     }
 
-    doRequest(url, data) {
+    async doRequest(url, data) {
         return new Promise((resolve, reject) => {
-            ipcRenderer.once(channels.DEVICE_API, (event, args) => {
+            this.ipcRenderer.once(channels.DEVICE_API, (event, args) => {
                 if (args && args.error === 0) {
                     resolve(typeof args.data === 'string' ? JSON.parse(args.data) : args.data)
                 } else {
                     reject(args);
                 }
             });
-            ipcRenderer.send(channels.DEVICE_API, { url, data });
+            this.ipcRenderer.send(channels.DEVICE_API, { url, data });
         });
     }
 
@@ -62,7 +62,7 @@ export default class DeviceApi {
             throw new Error(`Invalid pulse value "${pulse}". Must be one of ${ON_OFF.join(', ')}`)
         }
         if (typeof pulseWidth !== 'number' || pulseWidth < 500 || pulseWidth > 36000000 || pulseWidth % 500 !== 0) {
-            throw new Error(`Invalud pulseWidth value "${pulseWidth}". Must be a number that is a multiple of 500 between 500 and 36000000`);
+            throw new Error(`Invalid pulseWidth value "${pulseWidth}". Must be a number that is a multiple of 500 between 500 and 36000000`);
         }
         const url = `${this.url}/zeroconf/pulse`;
         const data = { deviceid: this.id, data: { pulse, pulseWidth } };
@@ -71,10 +71,10 @@ export default class DeviceApi {
 
     async setWifi({ ssid, password }) {
         if (isBlank(ssid)) {
-            throw new Error(`Invalud ssid value "${ssid}". Must not be blank`);
+            throw new Error(`Invalid ssid value "${ssid}". Must not be blank`);
         }
         if (isBlank(password)) {
-            throw new Error(`Invalud password value "${password}". Must not be blank`);
+            throw new Error(`Invalid password value "${password}". Must not be blank`);
         }
         const url = `${this.url}/zeroconf/wifi`;
         const data = { deviceid: this.id, data: { ssid, password } };
@@ -89,10 +89,10 @@ export default class DeviceApi {
 
     async flashOta({ downloadUrl, sha256sum }) {
         if (isBlank(downloadUrl)) {
-            throw new Error(`Invalud download url value "${downloadUrl}". Must not be blank`);
+            throw new Error(`Invalid download url value "${downloadUrl}". Must not be blank`);
         }
         if (isBlank(sha256sum)) {
-            throw new Error(`Invalud sha256 sum value "${sha256sum}". Must not be blank`);
+            throw new Error(`Invalid sha256 sum value "${sha256sum}". Must not be blank`);
         }
         const url = `${this.url}/zeroconf/ota_flash`;
         const data = { deviceid: this.id, data: { downloadUrl, sha256sum } };
@@ -101,10 +101,11 @@ export default class DeviceApi {
 
     async verifyOtaUrl({ url }) {
         return new Promise((resolve, reject) => {
-            ipcRenderer.once(channels.VERIFY_OTA_URL, (event, args) => args && args.error
+            this.ipcRenderer.once(channels.VERIFY_OTA_URL, (event, args) =>
+            args && args.error
                 ? reject(args.error)
                 : resolve(args));
-            ipcRenderer.send(channels.VERIFY_OTA_URL, url);
+            this.ipcRenderer.send(channels.VERIFY_OTA_URL, url);
         });
     }
 }

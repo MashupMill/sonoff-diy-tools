@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import { Button, Intent, Dialog, H5, Classes, Callout } from '@blueprintjs/core';
 
 export default function WifiSaveConfirmDialog({ ssid, password, isOpen, onClose, onSave }) {
-    const primaryAction = useRef();
+    const primaryAction = useRef(null);
     return (
         <Dialog icon="warning-sign"
                 isOpen={isOpen}
                 onClose={onClose}
                 title="Please double check!"
-                onOpened={() => console.log(primaryAction.current)}>
+                onOpened={() => primaryAction.current.focus()}>
             <div className={`${Classes.DIALOG_BODY} ${Classes.RUNNING_TEXT}`}>
                 <Callout intent={Intent.WARNING}>
                     Please double check these settings are correct!
@@ -24,7 +24,7 @@ export default function WifiSaveConfirmDialog({ ssid, password, isOpen, onClose,
             </div>
             <div className={`${Classes.DIALOG_FOOTER} ${Classes.DIALOG_FOOTER_ACTIONS}`}>
                 <Button onClick={onClose}>Cancel</Button>
-                <Button elementRef={primaryAction} intent={Intent.PRIMARY} onClick={onSave}>Save Wifi Settings</Button>
+                <Button elementRef={(ref)=>primaryAction.current = ref} intent={Intent.PRIMARY} onClick={onSave}>Save Wifi Settings</Button>
             </div>
         </Dialog>
     )

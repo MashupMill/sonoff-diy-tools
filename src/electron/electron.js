@@ -4,9 +4,7 @@ const url = require('url');
 const { createServer } = require('http-server');
 const getPort = require('get-port');
 const internalIp = require('internal-ip');
-const dnssd = require('dnssd2');
 // const autoUpdater = require('electron-updater');
-const { channels } = require('./constants');
 
 const STATIC_DIR = path.join(app.getPath('userData'), 'static');
 
@@ -27,6 +25,8 @@ async function createWindow() {
         },
     });
 
+    require('./setupIpc')({ app, ipcMain, mainWindow, staticUrl, staticDir: STATIC_DIR });
+
     // and load the index.html of the app.
     const startUrl = process.env.ELECTRON_START_URL || url.format({
         pathname: path.join(__dirname, '/../build/index.html'),
@@ -35,7 +35,7 @@ async function createWindow() {
     });
     mainWindow.loadURL(startUrl);
     // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
@@ -74,45 +74,3 @@ app.allowRendererProcessReuse = true;
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-ipcMain.on(channels.APP_INFO, (event) => {
-    event.sender.send(channels.APP_INFO, {
-        appName: app.name,
-        appVersion: app.getVersion(),
-        nodeVersion: process.versions.node,
-        chromeVersion: process.versions.chrome,
-        electronVersion: process.versions.electron,
-    });
-});
-
-let browser;
-ipcMain.on(channels.SCAN_DEVICES, () => {
-    if (browser) {
-        browser.stop();
-    }
-    browser = dnssd.Browser(dnssd.tcp('ewelink'))
-        .on('serviceUp', service => mainWindow.webContents.send(channels.DEVICE_ADDED, service))
-        .on('serviceChanged', service => mainWindow.webContents.send(channels.DEVICE_UPDATED, service))
-        .on('serviceDown', service => mainWindow.webContents.send(channels.DEVICE_REMOVED, service))
-        .start();
-});
-
-ipcMain.on(channels.DEVICE_API, (event, args) => {
-    require('axios')
-    .post(args.url, args.data)
-    .then(response => {
-        event.reply(channels.DEVICE_API, response.data);
-    })
-    .catch(error => {
-        console.log(error)
-        event.reply(channels.DEVICE_API_ERROR, error);
-    })
-});
-
-ipcMain.on(channels.VERIFY_OTA_URL, async (event, url) => {
-    try {
-        const verification = await require('./verifyOtaUrl')(url, STATIC_DIR);
-        event.reply(channels.VERIFY_OTA_URL, {...verification, downloadUrl: `${staticUrl}/${verification.filename}`});
-    } catch (error) {
-        event.reply(channels.VERIFY_OTA_URL, { error });
-    }
-});

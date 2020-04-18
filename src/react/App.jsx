@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import { Alignment, Navbar, NonIdealState } from '@blueprintjs/core';
 import './App.css';
-import { channels } from '../electron/constants';
 import DeviceResult from './components/DeviceResult';
-const { ipcRenderer } = window;
+import { ipcRenderer, channels } from './ipc';
 
 class App extends Component {
 
@@ -17,7 +16,6 @@ class App extends Component {
   }
 
   handleDeviceUpdated = (event, device) => {
-    console.log('device added/updated', device.txt.data1)
     if (JSON.stringify(device) !== JSON.stringify(this.state.devices[device.fqdn])) {
       this.setState({ devices: {...this.state.devices, [device.fqdn]: device} });
     }
@@ -40,6 +38,10 @@ class App extends Component {
     ipcRenderer.send(channels.SCAN_DEVICES);
   }
 
+  componentWillUnmount() {
+    ipcRenderer.removeAllListeners();
+  }
+
   render() {
     const { appName, appVersion } = this.state;
     const devices = Object.values(this.state.devices);
@@ -47,7 +49,7 @@ class App extends Component {
       <div>
         <Navbar>
           <Navbar.Group align={Alignment.LEFT}>
-            <Navbar.Heading>{appName} <small>v{appVersion}</small></Navbar.Heading>
+            <Navbar.Heading role="heading">{appName} <small>v{appVersion}</small></Navbar.Heading>
           </Navbar.Group>
           <Navbar.Group align={Alignment.RIGHT}>
             {/* <Button icon={'flash' || 'moon'} minimal /> */}

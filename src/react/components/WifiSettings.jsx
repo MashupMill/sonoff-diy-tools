@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
-import { Icon, Button, Intent, InputGroup, Classes, FormGroup } from '@blueprintjs/core';
+import { Icon, Button, Intent, InputGroup, Classes, FormGroup, Label } from '@blueprintjs/core';
 import WifiSaveConfirmDialog from './WifiSaveConfirmDialog';
 
 const StyledInputGroup = styled(InputGroup)`
@@ -14,21 +14,15 @@ const SaveActions = styled.div`
     margin-bottom: 15px;
 `;
 
-export default function WifiSettings({ initialSsid, deviceApi }) {
+export default function WifiSettings({ initialSsid = '', deviceApi }) {
+    const [id] = useState(`wifi-settings`);
     const [isEditing, setEditing] = useState(false);
-    const [showPassword, setShowPassword] = useState(true);
+    const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [ssid, setSsid] = useState(initialSsid);
     const [password, setPassword] = useState('');
 
-    if (!ssid && initialSsid) {
-        setSsid(initialSsid);
-    }
-
-    if (!ssid) return null;
-
     const handleSubmit = (e) => {
-        console.log('submit');
         e.preventDefault();
         setShowConfirm(true);
         return false;
@@ -49,7 +43,7 @@ export default function WifiSettings({ initialSsid, deviceApi }) {
     if (!isEditing) {
         return (
             <FormGroup label="Wifi Network">
-                {ssid} <Button minimal onClick={() => setEditing(true)}><Icon icon="edit" /></Button>
+                {ssid} <Button minimal onClick={() => setEditing(true)} aria-label="Edit Wifi Settings"><Icon icon="edit" /></Button>
             </FormGroup>
         )
     }
@@ -57,23 +51,28 @@ export default function WifiSettings({ initialSsid, deviceApi }) {
     return (
         <form onSubmit={handleSubmit}>
             <FormGroup label="Wifi Network">
-                <StyledInputGroup autoFocus
-                                  placeholder="SSID"
+                <Label htmlFor={`${id}-ssid`}>SSID</Label>
+                <StyledInputGroup id={`${id}-ssid`}
+                                  autoFocus
                                   value={ssid}
-                                  onChange={e => setSsid(`${e.target.value || ''}`.trim())}
+                                  onChange={e => setSsid(`${e.target.value}`.trim())}
                 />
-                <StyledInputGroup leftIcon="lock"
+                <Label htmlFor={`${id}-password`}>Password</Label>
+                <StyledInputGroup id={`${id}-password`}leftIcon="lock"
                                   type={showPassword ? 'text' : 'password'}
-                                  placeholder="Password"
-                                  rightElement={<Button onClick={() => setShowPassword(!showPassword)} minimal><Icon icon={showPassword ? 'eye-open' : 'eye-off'} /></Button>}
+                                  rightElement={
+                                    <Button onClick={() => setShowPassword(!showPassword)} minimal aria-label={showPassword ? 'Hide Password' : 'Show Password'}>
+                                        <Icon icon={showPassword ? 'eye-open' : 'eye-off'} />
+                                    </Button>
+                                  }
                                   value={password}
-                                  onChange={e => setPassword(`${e.target.value || ''}`.trim())}
+                                  onChange={e => setPassword(`${e.target.value}`.trim())}
                 />
             </FormGroup>
 
             <SaveActions className={Classes.DIALOG_FOOTER_ACTIONS}>
                 <Button small onClick={handleCancel}>Cancel</Button>
-                <Button small disabled={!password} intent={Intent.PRIMARY} type="submit" onClick={handleSubmit}>Save</Button>
+                <Button small disabled={!password || !ssid} intent={Intent.PRIMARY} type="submit" onClick={handleSubmit}>Save</Button>
             </SaveActions>
 
             <WifiSaveConfirmDialog ssid={ssid}

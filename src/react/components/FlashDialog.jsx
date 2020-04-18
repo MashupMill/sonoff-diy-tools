@@ -10,6 +10,7 @@ export default function FlashDialog({ isOpen, onClose, deviceApi }) {
     const [ url, setUrl ] = useState('');
     const [ verification, setVerification ] = useState({});
     const [ flashing, setFlashing ] = useState(false);
+    const [ flashStage, setFlashStage ] = useState(null);
 
     const [doVerification] = useDebouncedCallback(
         async () => {
@@ -17,7 +18,7 @@ export default function FlashDialog({ isOpen, onClose, deviceApi }) {
             try {
                 const newVerification = await deviceApi.verifyOtaUrl({ url });
                 let error = null;
-                if (newVerification.size && newVerification.size > MAX_SIZE) {
+                if (newVerification.size > MAX_SIZE) {
                     error = new Error(`The file size (${newVerification.size / 1000}kb) is greater than the max file size (${MAX_SIZE / 1000}kb)`);
                 }
                 setVerification({
@@ -27,7 +28,6 @@ export default function FlashDialog({ isOpen, onClose, deviceApi }) {
                     error,
                 });
             } catch (error) {
-                console.error(error);
                 setVerification({
                     verifying: false,
                     valid: false,
@@ -42,23 +42,24 @@ export default function FlashDialog({ isOpen, onClose, deviceApi }) {
         e.preventDefault();
         setFlashing(true);
         const info = await deviceApi.getInfo();
-        console.log({info})
         if (info.otaUnlock === false) {
+            setFlashStage('Unlocking');
             await deviceApi.setOtaUnlock();
             if (!(await deviceApi.getInfo()).otaUnlock) {
-                // TODO: handle error
-                console.error('Device is still OTA locked. Please make sure the device is on a network connected to the internet');
+                setVerification({ ...verification, valid: false, error: new Error('Failed to unlock the device. Please make sure the device is on a network connected to the internet') })
+                setFlashStage(null);
                 setFlashing(false);
                 return false;
             }
         }
+        setFlashStage('Sending Url');
         await deviceApi.flashOta({ downloadUrl: verification.downloadUrl, sha256sum: verification.sha256sum });
+        setFlashStage('Sent');
         setFlashing(false);
     };
 
     const handleChange = async (e) => {
-        const url = e.target.value;
-        setUrl(url);
+        setUrl(e.target.value);
         doVerification();
     }
 
@@ -80,12 +81,12 @@ export default function FlashDialog({ isOpen, onClose, deviceApi }) {
                 </div>
                 <div className={`${Classes.DIALOG_FOOTER} ${Classes.DIALOG_FOOTER_ACTIONS}`}>
                     <Button onClick={onClose} disabled={flashing}>Cancel</Button>
-                    <Button disabled={verification.valid !== true}
-                            loading={verification.verifying || flashing}
+                    <Button disabled={verification.valid !== true || flashing || flashStage}
+                            loading={verification.verifying}
                             intent={Intent.PRIMARY}
                             type="submit"
                     >
-                        Flash
+                        {flashStage ? flashStage : 'Flash'}
                     </Button>
                 </div>
             </form>

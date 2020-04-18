@@ -31,10 +31,10 @@ export default function DeviceResult({ device }) {
     const [ showFlash, setShowFlash ] = useState(false);
     const [ settings, setSettings ] = useState({});
     const deviceApi = new DeviceApi({ id: device.txt.id, addresses: device.addresses, port: device.port })
-    const loadSettings = () => {deviceApi.getInfo().then((data) => setSettings(data || {}))};
+    const loadSettings = () => {deviceApi.getInfo().then((data) => setSettings(data))};
     useEffect(loadSettings, [ device.txt.id, device.addresses, device.port ])
 
-    const handleConfigChange = async ({ startup, pulse, pulseWidth } = {}) => {
+    const handleConfigChange = async ({ startup, pulse, pulseWidth }) => {
         const saves = [];
         if (startup !== settings.startup) {
             saves.push(deviceApi.setPowerOnState(startup));
@@ -44,7 +44,7 @@ export default function DeviceResult({ device }) {
         }
         setSettings({ ...settings, startup, pulse, pulseWidth });
         await Promise.all(saves);
-        loadSettings();
+        await loadSettings();
     }
 
     return (
@@ -59,18 +59,19 @@ export default function DeviceResult({ device }) {
                         checked={settings.switch === 'on'}
                         innerLabel="off"
                         innerLabelChecked="on"
+                        aria-label={settings.switch === 'on' ? 'Turn Off' : 'Turn On'}
                         onChange={async (e) => {
-                                await deviceApi.switch(e.target.checked)
-                                loadSettings();
-                            }} />
+                            await deviceApi.switch(e.target.checked);
+                            await loadSettings();
+                        }} />
                 </CardHeaderGroup>
                 <CardHeaderGroup>
                     <Button disabled={!settings.switch} onClick={() => setShowFlash(!showFlash)}>Flash</Button>
-                    <Button disabled={!settings.switch} minimal icon="cog" intent={showSettings ? Intent.PRIMARY : undefined} onClick={() => setShowSettings(!showSettings)} />
+                    <Button disabled={!settings.switch} minimal icon="cog" intent={showSettings ? Intent.PRIMARY : undefined} onClick={() => setShowSettings(!showSettings)} aria-label={showSettings ? 'Hide Settings' : 'Show Settings'} />
                 </CardHeaderGroup>
             </CardHeader>
             <Collapse isOpen={showSettings}>
-                <DeviceConfiguration settings={settings} onChange={handleConfigChange} deviceApi={deviceApi} />
+                {Object.keys(settings).length && <DeviceConfiguration settings={settings} onChange={handleConfigChange} deviceApi={deviceApi} />}
             </Collapse>
             <FlashDialog isOpen={showFlash}
                          deviceApi={deviceApi}
@@ -84,8 +85,8 @@ DeviceResult.propTypes = {
         name: PropTypes.string,
         addresses: PropTypes.arrayOf(PropTypes.string),
         port: PropTypes.number,
-        txt: {
+        txt: PropTypes.shape({
             id: PropTypes.string,
-        }
+        })
     })
 };
