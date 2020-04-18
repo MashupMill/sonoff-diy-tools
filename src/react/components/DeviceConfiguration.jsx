@@ -19,9 +19,14 @@ const StyledContainer = styled(Callout)`
         margin-left: 0;
         margin-right: 0;
     }
-`
+`;
 
-export default function DeviceConfiguration({ settings = {}, onChange, deviceApi }) {
+const StyledLabel = styled(Label)`
+    font-weight: bold;
+`;
+
+export default function DeviceConfiguration({ settings, onChange, deviceApi }) {
+    const [id] = useState('abc')
     const [pulseWidth, setPulseWidth] = useState(settings.pulseWidth);
     // if (settings.pulseWidth && settings.pulseWidth != pulseWidth) {
     //     setPulseWidth(settings.pulseWidth);
@@ -32,21 +37,27 @@ export default function DeviceConfiguration({ settings = {}, onChange, deviceApi
             <Divider />
             <WifiSettings initialSsid={settings.ssid} deviceApi={deviceApi} />
 
-            <FormGroup label="Power On State">
-                <Select value={settings.startup} onChange={e => onChange({ ...settings, startup: e.target.value })}>
+            <FormGroup>
+                <StyledLabel htmlFor={`${id}-power-on-state`}>
+                    Power On State
+                </StyledLabel>
+                <Select id={`${id}-power-on-state`} value={settings.startup} onChange={e => onChange({ ...settings, startup: e.target.value })}>
                     <option value="off">Off</option>
                     <option value="on">On</option>
                     <option value="stay">Stay</option>
                 </Select>
             </FormGroup>
 
-            <FormGroup label="Pulse / Inching Settings">
+            <FormGroup label="Inching Settings">
                 <Label>
-                    <Switch label="Enabled" checked={settings.pulse === 'on'} onChange={(e) => onChange({ ...settings, pulse: e.target.checked ? 'on' : 'off' })} />
+                    <Switch label="Inching Enabled" checked={settings.pulse === 'on'} onChange={(e) => onChange({ ...settings, pulse: e.target.checked ? 'on' : 'off' })} />
                 </Label>
-                <Label>
+                <Label htmlFor={`${id}-pulse-width`}>
                     Pulse Width (milliseconds)
-                <NumericInput value={pulseWidth}
+
+                </Label>
+                <NumericInput id={`${id}-pulse-width`}
+                              value={pulseWidth}
                               leftIcon="time"
                               min={PULSE_WIDTH_MIN}
                               max={PULSE_WIDTH_MAX}
@@ -54,12 +65,12 @@ export default function DeviceConfiguration({ settings = {}, onChange, deviceApi
                               minorStepSize={500}
                               majorStepSize={10000}
                               onValueChange={value => {
-                            setPulseWidth(value);
-                            if (value % PULSE_WIDTH_STEP === 0) {
-                                onChange({ ...settings, pulseWidth: value })
-                            }
-                        }} />
-                </Label>
+                                setPulseWidth(value);
+                                if (value % PULSE_WIDTH_STEP === 0) {
+                                    onChange({ ...settings, pulseWidth: value })
+                                }
+                              }}
+                />
             </FormGroup>
         </StyledContainer>
     )
@@ -68,9 +79,10 @@ export default function DeviceConfiguration({ settings = {}, onChange, deviceApi
 DeviceConfiguration.propTypes = {
     settings: PropTypes.shape({
         ssid: PropTypes.string,
+        startup: PropTypes.oneOf(['on', 'off', 'stay']),
         pulse: PropTypes.oneOf(['on', 'off']),
-        // TOOD: rest
-    }),
+        pulseWidth: PropTypes.number,
+    }).isRequired,
     onChange: PropTypes.func,
     deviceApi: PropTypes.object,
 }

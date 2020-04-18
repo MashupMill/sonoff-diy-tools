@@ -1,0 +1,5 @@
+{
+    "jestTestExplorer": {
+        // "pathToJest": "set -x ; npm run test --"
+    }
+}
