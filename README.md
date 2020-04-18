@@ -15,4 +15,4 @@ Download a release for your operating system from the [releases](https://github.
 
 ![Main Screen](./docs/main-screen.png)
 ![Device Settings](./docs/device-settings.png)
-![Device Flash](./docs/device-Flash.png)
+![Device Flash](./docs/device-flash.png)
