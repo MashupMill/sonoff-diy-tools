@@ -48,7 +48,7 @@
     "dnssd2": "^1.0.0",
     "electron-updater": "^4.2.5",
     "get-port": "^5.1.1",
-    "http-server": "^0.12.1",
+    "http-server": "^0.12.3",
     "internal-ip": "^6.0.0",
     "multicast-dns": "^7.2.1",
     "node-fetch": "^2.6.0",
